@@ -5,7 +5,7 @@ import os
 
 # تحميل النموذج ومعلومات النموذج
 model = joblib.load('drug_addiction_random_forest_model.pkl')
-model_info = joblib.load('model_info.pkl')
+# model_info = joblib.load('model_info.pkl')
 
 app = Flask(__name__)
 
