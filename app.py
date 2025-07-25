@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import numpy as np
+import pandas as pd
 import joblib
 import os
 
@@ -8,6 +9,19 @@ try:
     model = joblib.load('drug_addiction_random_forest_model.pkl')
 except:
     model = None
+
+# أسماء الأعمدة بنفس ترتيب التدريب
+feature_names = [ 
+    'Education', 'Family relationship', 'Enjoyable with', 'Addicted person in family',
+    'no. of friends', 'Withdrawal symptoms', "friends' houses at night",
+    'Living with drug user', 'Smoking', 'Friends influence', 'If chance given to taste drugs',
+    'Easy to control use of drug', 'Frequency of drug usage', 'Gender', 'Conflict with law',
+    'Failure in life', 'Suicidal thoughts', 'Satisfied with workplace', 'Case in court',
+    'Ever taken drug',
+    'Mental_emotional problem_Angry', 'Mental_emotional problem_Depression',
+    'Mental_emotional problem_Stable', 'Motive about drug_Curiosity',
+    'Motive about drug_Enjoyment', 'Live with_Alone', 'Spend most time_Friends'
+]
 
 app = Flask(__name__)
 
@@ -56,18 +70,18 @@ def predict():
                 'error': f'Expected 27 features, got {len(input_values)}'
             }), 400
 
-        # تحويل البيانات
+        # تحويل البيانات إلى DataFrame مع أسماء الأعمدة
         try:
-            input_array = np.array(input_values, dtype=float).reshape(1, -1)
+            input_df = pd.DataFrame([input_values], columns=feature_names)
         except Exception as e:
             return jsonify({'error': 'Invalid data format'}), 400
         
         # التنبؤ
-        prediction = model.predict(input_array)[0]
+        prediction = model.predict(input_df)[0]
         
         # الاحتمالية
         try:
-            probability = model.predict_proba(input_array)[0][1]
+            probability = model.predict_proba(input_df)[0][1]
         except:
             probability = None
         
