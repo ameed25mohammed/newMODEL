@@ -10,17 +10,20 @@ try:
 except:
     model = None
 
-# أسماء الأعمدة بنفس ترتيب التدريب
-feature_names = [ 
+# أسماء الأعمدة الصحيحة حسب النموذج
+feature_names = [
     'Education', 'Family relationship', 'Enjoyable with', 'Addicted person in family',
     'no. of friends', 'Withdrawal symptoms', "friends' houses at night",
     'Living with drug user', 'Smoking', 'Friends influence', 'If chance given to taste drugs',
     'Easy to control use of drug', 'Frequency of drug usage', 'Gender', 'Conflict with law',
     'Failure in life', 'Suicidal thoughts', 'Satisfied with workplace', 'Case in court',
-    'Ever taken drug',
+    'Ever taken drug', 'Financials of family',
     'Mental_emotional problem_Angry', 'Mental_emotional problem_Depression',
     'Mental_emotional problem_Stable', 'Motive about drug_Curiosity',
-    'Motive about drug_Enjoyment', 'Live with_Alone', 'Spend most time_Friends'
+    'Motive about drug_Enjoyment', 
+    'Live_with_Alone', 'Live_with_Hostel/Hall', 'Live_with_With Family/Relatives',
+    'Spend_most_time_Alone', 'Spend_most_time_Business', 'Spend_most_time_Family/ Relatives',
+    'Spend_most_time_Friends', 'Spend_most_time_Hostel', 'Spend_most_time_Job/Work place'
 ]
 
 app = Flask(__name__)
@@ -64,10 +67,10 @@ def predict():
         
         input_values = data['input']
         
-        # فحص عدد المتغيرات
-        if len(input_values) != 27:
+        # فحص عدد المتغيرات (الآن 35 متغير)
+        if len(input_values) != len(feature_names):
             return jsonify({
-                'error': f'Expected 27 features, got {len(input_values)}'
+                'error': f'Expected {len(feature_names)} features, got {len(input_values)}'
             }), 400
 
         # تحويل البيانات إلى DataFrame مع أسماء الأعمدة
