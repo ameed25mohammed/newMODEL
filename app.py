@@ -10,7 +10,98 @@ model = joblib.load('drug_addiction_random_forest_model.pkl')
 app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
+def home():from flask import Flask, request, jsonify
+import pandas as pd
+import joblib
+import os
+
+# تحميل النموذج
+model = joblib.load('drug_addiction_random_forest_model.pkl')
+
+# تعريف أسماء الأعمدة بنفس ترتيب التدريب
+feature_names = [ 
+    'Education', 'Family relationship', 'Enjoyable with', 'Addicted person in family',
+    'no. of friends', 'Withdrawal symptoms', "friends' houses at night",
+    'Living with drug user', 'Smoking', 'Friends influence', 'If chance given to taste drugs',
+    'Easy to control use of drug', 'Frequency of drug usage', 'Gender', 'Conflict with law',
+    'Failure in life', 'Suicidal thoughts', 'Satisfied with workplace', 'Case in court',
+    'Ever taken drug',
+    'Mental_emotional problem_Angry', 'Mental_emotional problem_Depression',
+    'Mental_emotional problem_Stable', 'Motive about drug_Curiosity',
+    'Motive about drug_Enjoyment', 'Live with_Alone', 'Spend most time_Friends'
+]
+
+app = Flask(__name__)
+
+@app.route('/', methods=['GET'])
 def home():
+    return jsonify({
+        'message': 'Drug Addiction Prediction API is running on Render!',
+        'status': 'success',
+        'model_type': 'Random Forest (PKL)',
+        'model_info': 'Model info not available'
+    })
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    try:
+        data = request.get_json()
+        if not data or 'input' not in data:
+            return jsonify({'error': 'Missing input data'}), 400
+        
+        input_values = data['input']
+        if len(input_values) != len(feature_names):
+            return jsonify({'error': f'Expected {len(feature_names)} features, but got {len(input_values)}'}), 400
+
+        # تحويل البيانات إلى DataFrame بالأعمدة المسماة
+        input_df = pd.DataFrame([input_values], columns=feature_names)
+        
+        # التنبؤ
+        prediction = model.predict(input_df)[0]
+        
+        # احتمالية التنبؤ (إن وجدت)
+        try:
+            prediction_prob = model.predict_proba(input_df)[0]
+            if len(prediction_prob) == 2:
+                probability = float(prediction_prob[1])
+            else:
+                probability = float(max(prediction_prob))
+        except:
+            probability = None
+        
+        result = {
+            'prediction': int(prediction),
+            'platform': 'Render'
+        }
+
+        if probability is not None:
+            result['probability'] = probability
+
+        return jsonify(result)
+    
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/model-info', methods=['GET'])
+def get_model_info():
+    return jsonify({
+        'model_info': 'Model info not available',
+        'model_type': 'Random Forest',
+        'status': 'success'
+    })
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({
+        'status': 'healthy',
+        'model_loaded': model is not None,
+        'model_info_loaded': False
+    })
+
+if __name__ == '__main__':
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
+
     return jsonify({
         'message': 'Drug Addiction Prediction API is running on Render!',
         'status': 'success',
