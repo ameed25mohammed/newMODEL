@@ -13,6 +13,13 @@ except:
 app = Flask(__name__)
 CORS(app)  # إضافة CORS
 
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 @app.route('/', methods=['GET'])
 def home():
     return jsonify({
@@ -23,21 +30,36 @@ def home():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
+        # فحص النموذج
         if model is None:
-            return jsonify({'error': 'Model not available'}), 500
+            return jsonify({'error': 'Model not loaded'}), 500
             
+        # فحص البيانات
         data = request.get_json()
-        if not data or 'input' not in data:
-            return jsonify({'error': 'Invalid input'}), 400
+        if not data:
+            return jsonify({'error': 'No JSON data'}), 400
+            
+        if 'input' not in data:
+            return jsonify({'error': 'Missing input field'}), 400
         
         input_values = data['input']
         
+        # فحص عدد المتغيرات
         if len(input_values) != 27:
-            return jsonify({'error': 'Wrong number of features'}), 400
+            return jsonify({
+                'error': f'Expected 27 features, got {len(input_values)}'
+            }), 400
 
-        input_array = np.array(input_values).reshape(1, -1)
+        # تحويل البيانات
+        try:
+            input_array = np.array(input_values, dtype=float).reshape(1, -1)
+        except Exception as e:
+            return jsonify({'error': 'Invalid data format'}), 400
+        
+        # التنبؤ
         prediction = model.predict(input_array)[0]
         
+        # الاحتمالية
         try:
             probability = model.predict_proba(input_array)[0][1]
         except:
@@ -53,8 +75,11 @@ def predict():
             
         return jsonify(result)
     
-    except:
-        return jsonify({'error': 'Prediction failed'}), 500
+    except Exception as e:
+        return jsonify({
+            'error': 'Prediction failed',
+            'details': str(e)
+        }), 500
 
 @app.route('/health', methods=['GET'])
 def health():
